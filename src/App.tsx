@@ -65,6 +65,7 @@ function App() {
           {/* Catch all - 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       )}
     </Router>
   );
