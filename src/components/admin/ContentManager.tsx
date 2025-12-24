@@ -9,7 +9,7 @@ import {
   Save,
 } from 'lucide-react';
 import { api } from '../../lib/api';
-import { ContentCategory, ContentItem, ISermon, IEvent } from '../../types';
+import { ContentCategory, ContentItem, ISermon } from '../../types';
 import MediaDropzone from '../ui/MediaDropzone';
 import SermonForm from './SermonForm';
 
@@ -318,7 +318,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                   </label>
                   <MediaDropzone 
                       onDrop={handleFileDrop}
-                      initialPreview={(formData as any).imageUrl || (formData as any).thumbnail || ''}
+                      initialPreview={(formData as ContentItem).imageUrl || (formData as ISermon).thumbnail || ''}
                       onClear={handleClearFile}
                       accept={{
                           'image/jpeg': [],

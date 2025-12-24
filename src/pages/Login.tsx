@@ -7,10 +7,21 @@ import { Logger } from '../lib/logger';
 const Login = () => {
   const [passkey, setPasskey] = useState('');
   const [error, setError] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
   const navigate = useNavigate();
+
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_TIME = 60000; // 1 minute
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isLocked) {
+      setError('Account temporarily locked. Please try again later.');
+      return;
+    }
+
     const envPasskey = import.meta.env.VITE_ADMIN_PASSKEY;
     
     if (!envPasskey) {
@@ -25,14 +36,30 @@ const Login = () => {
       try {
         localStorage.setItem('kmci_admin_session', 'true');
         Logger.access('Admin login successful');
+        setAttempts(0);
         navigate('/admin/dashboard');
       } catch (err) {
         Logger.error('Login Storage Error', { error: err });
         setError('Failed to save session. Check browser settings.');
       }
     } else {
-      Logger.warn('Failed login attempt', { timestamp: new Date() });
-      setError('Invalid passkey provided.');
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setIsLocked(true);
+        setError(`Too many failed attempts. Locked for ${LOCKOUT_TIME / 1000} seconds.`);
+        Logger.warn('Account locked due to excessive failed attempts');
+        
+        setTimeout(() => {
+          setIsLocked(false);
+          setAttempts(0);
+          setError('');
+        }, LOCKOUT_TIME);
+      } else {
+        Logger.warn('Failed login attempt', { timestamp: new Date(), attempts: newAttempts });
+        setError(`Invalid passkey provided. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
+      }
     }
   };
 

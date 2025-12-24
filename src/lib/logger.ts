@@ -54,8 +54,7 @@ export class Logger {
       [LogLevel.ACCESS]: 'color: #22c55e'
     };
     
-    // eslint-disable-next-line no-console
-    console.log(`%c[${level}] ${message}`, style[level] || '', details || '');
+    console.log(`%c[${level}] ${message}`, style[level] || '', details);
     
     // Persist log
     this.saveLog(entry);
