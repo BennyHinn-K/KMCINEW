@@ -13,6 +13,7 @@ import ScrollToTop from './components/ScrollToTop';
 import SplashScreen from './components/SplashScreen';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
+import ErrorBoundary from './components/ErrorBoundary';
 import { AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -51,7 +52,9 @@ function App() {
             path="/admin/dashboard" 
             element={
               <ProtectedRoute>
-                <AdminDashboard />
+                <ErrorBoundary>
+                  <AdminDashboard />
+                </ErrorBoundary>
               </ProtectedRoute>
             } 
           />

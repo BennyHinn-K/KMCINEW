@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, AlertCircle } from 'lucide-react';
+import { Logger } from '../lib/logger';
 
 const Login = () => {
   const [passkey, setPasskey] = useState('');
@@ -11,8 +12,10 @@ const Login = () => {
     e.preventDefault();
     if (passkey === import.meta.env.VITE_ADMIN_PASSKEY) {
       localStorage.setItem('kmci_admin_session', 'true');
+      Logger.access('Admin login successful');
       navigate('/admin/dashboard');
     } else {
+      Logger.warn('Failed login attempt', { timestamp: new Date() });
       setError('Invalid passkey provided.');
     }
   };

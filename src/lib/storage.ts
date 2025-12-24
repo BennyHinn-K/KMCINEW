@@ -1,3 +1,5 @@
+import { Logger } from './logger';
+
 /**
  * StorageManager: A robust local storage wrapper with error handling,
  * namespacing, and fallback mechanisms.
@@ -26,16 +28,22 @@ export class StorageManager {
     return `${NAMESPACE}${key}`;
   }
 
-  private static handleError(error: unknown): Error {
+  private static handleError(error: unknown, operation: string, key?: string): Error {
+    let finalError: Error;
     if (error instanceof Error) {
         if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-             return new Error('Storage quota exceeded. Please clear some space.');
+             finalError = new Error('Storage quota exceeded. Please clear some space.');
+        } else if (error.name === 'SecurityError') {
+             finalError = new Error('Storage disabled due to security settings.');
+        } else {
+             finalError = error;
         }
-        if (error.name === 'SecurityError') {
-             return new Error('Storage disabled due to security settings.');
-        }
+    } else {
+        finalError = new Error('Unknown storage error');
     }
-    return error instanceof Error ? error : new Error('Unknown storage error');
+    
+    Logger.error(`Storage Error [${operation}]`, { key, error: finalError.message });
+    return finalError;
   }
 
   /**
@@ -43,7 +51,7 @@ export class StorageManager {
    */
   static getItem<T>(key: string, defaultValue: T): T {
     if (!this.isSupported()) {
-        console.warn('LocalStorage not supported, returning default value');
+        Logger.warn('LocalStorage not supported, returning default value');
         return defaultValue;
     }
 
@@ -57,11 +65,11 @@ export class StorageManager {
         return JSON.parse(item) as T;
       } catch {
         // If parsing fails, it might be a simple string or corrupted
-        console.error(`Failed to parse item for key: ${key}`);
+        Logger.error(`Failed to parse item for key: ${key}`);
         return defaultValue;
       }
     } catch (error) {
-      console.error(this.handleError(error));
+      this.handleError(error, 'getItem', key);
       return defaultValue;
     }
   }
@@ -78,8 +86,7 @@ export class StorageManager {
       localStorage.setItem(fullKey, serialized);
       return true;
     } catch (error) {
-      const handledError = this.handleError(error);
-      console.error(`Failed to save item ${key}:`, handledError.message);
+      this.handleError(error, 'setItem', key);
       return false;
     }
   }
@@ -95,7 +102,7 @@ export class StorageManager {
       localStorage.removeItem(fullKey);
       return true;
     } catch (error) {
-       console.error(this.handleError(error));
+       this.handleError(error, 'removeItem', key);
        return false;
     }
   }
@@ -117,7 +124,7 @@ export class StorageManager {
         
         keysToRemove.forEach(key => localStorage.removeItem(key));
     } catch (error) {
-        console.error(this.handleError(error));
+        this.handleError(error, 'clear');
     }
   }
 }
