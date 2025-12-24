@@ -51,17 +51,69 @@ const SermonForm: React.FC<SermonFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
+  // Validation Helpers
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const isValidDuration = (duration: string) => {
+    if (!duration) return true; // Optional field
+    // Allow HH:MM:SS or MM:SS
+    return /^(\d{1,2}:)?\d{1,2}:\d{2}$/.test(duration);
+  };
+
   // Validation Logic
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.title?.trim()) newErrors.title = "Title is required";
-    if (!formData.speaker?.trim()) newErrors.speaker = "Speaker name is required";
-    if (!formData.date) newErrors.date = "Date is required";
-    if (!formData.thumbnail) newErrors.thumbnail = "Thumbnail image is required";
     
-    if (videoSource === 'url' && !formData.videoUrl?.trim()) {
-      newErrors.videoUrl = "Video URL is required";
+    // Title Validation
+    if (!formData.title?.trim()) {
+      newErrors.title = "Title is required";
+    } else if (formData.title.length < 3) {
+      newErrors.title = "Title must be at least 3 characters";
     }
+
+    // Speaker Validation
+    if (!formData.speaker?.trim()) {
+      newErrors.speaker = "Speaker name is required";
+    } else if (formData.speaker.length < 3) {
+      newErrors.speaker = "Speaker name must be at least 3 characters";
+    }
+
+    // Date Validation
+    if (!formData.date) {
+      newErrors.date = "Date is required";
+    } else {
+      const date = new Date(formData.date);
+      if (isNaN(date.getTime())) {
+        newErrors.date = "Invalid date format";
+      }
+    }
+
+    // Duration Validation
+    if (formData.duration && !isValidDuration(formData.duration)) {
+      newErrors.duration = "Invalid duration format (use MM:SS or HH:MM:SS)";
+    }
+
+    // Thumbnail Validation
+    if (!formData.thumbnail) {
+      newErrors.thumbnail = "Thumbnail image is required";
+    }
+    
+    // Video Source Validation
+    if (videoSource === 'url') {
+      if (!formData.videoUrl?.trim()) {
+        newErrors.videoUrl = "Video URL is required";
+      } else if (!isValidUrl(formData.videoUrl)) {
+        newErrors.videoUrl = "Invalid URL format";
+      }
+    }
+
     if (videoSource === 'upload' && !videoFile && !formData.videoUrl) {
       newErrors.videoFile = "Video file is required";
     }
@@ -74,6 +126,20 @@ const SermonForm: React.FC<SermonFormProps> = ({
   const handleVideoDrop = (files: File[]) => {
     const file = files[0];
     if (!file) return;
+
+    // Strict File Validation
+    const validTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+    const maxSize = 500 * 1024 * 1024; // 500MB
+
+    if (!validTypes.includes(file.type)) {
+      setErrors(prev => ({ ...prev, videoFile: 'Invalid file type. Only MP4, WebM, and OGG are allowed.' }));
+      return;
+    }
+
+    if (file.size > maxSize) {
+      setErrors(prev => ({ ...prev, videoFile: 'File size exceeds 500MB limit.' }));
+      return;
+    }
 
     setVideoFile(file);
     setErrors(prev => ({ ...prev, videoFile: '' }));

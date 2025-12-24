@@ -28,6 +28,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
   
   // Form State for Non-Sermon items
   const [formData, setFormData] = useState<Partial<ContentItem>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadData();
@@ -62,7 +63,23 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
   // Handler for generic save (Events/News)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateGenericForm()) return;
     await processSave(formData);
+  };
+
+  const validateGenericForm = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.title?.trim()) errors.title = "Title is required";
+    if (!formData.date) errors.date = "Date is required";
+    
+    if (category === 'event') {
+      const eventData = formData as Record<string, unknown>;
+      if (!(eventData.time as string)?.trim()) errors.time = "Time is required";
+      if (!(eventData.location as string)?.trim()) errors.location = "Location is required";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   // Handler for SermonForm save
@@ -93,6 +110,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
   };
 
   const openModal = (item: ContentItem | null = null) => {
+    setFormErrors({});
     setEditingItem(item);
     if (item) {
       setFormData(item);
@@ -259,8 +277,9 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                     required
                     value={formData.title || ''}
                     onChange={e => setFormData({...formData, title: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                    className={`w-full px-3 py-2 border ${formErrors.title ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-amber-500 outline-none`}
                   />
+                  {formErrors.title && <p className="text-xs text-red-500 mt-1">{formErrors.title}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -271,8 +290,9 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                       required
                       value={formData.date || ''}
                       onChange={e => setFormData({...formData, date: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                      className={`w-full px-3 py-2 border ${formErrors.date ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-amber-500 outline-none`}
                     />
+                    {formErrors.date && <p className="text-xs text-red-500 mt-1">{formErrors.date}</p>}
                   </div>
                   
                   {category === 'event' && (
@@ -282,9 +302,10 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                         type="text" 
                         value={(formData as Record<string, unknown>).time as string || ''}
                         onChange={e => setFormData({...formData, time: e.target.value} as Partial<ContentItem>)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                        className={`w-full px-3 py-2 border ${formErrors.time ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-amber-500 outline-none`}
                         placeholder="10:00 AM"
                       />
+                      {formErrors.time && <p className="text-xs text-red-500 mt-1">{formErrors.time}</p>}
                     </div>
                   )}
                 </div>
@@ -296,8 +317,9 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                       type="text" 
                       value={(formData as Record<string, unknown>).location as string || ''}
                       onChange={e => setFormData({...formData, location: e.target.value} as Partial<ContentItem>)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                      className={`w-full px-3 py-2 border ${formErrors.location ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-amber-500 outline-none`}
                     />
+                    {formErrors.location && <p className="text-xs text-red-500 mt-1">{formErrors.location}</p>}
                   </div>
                 )}
 

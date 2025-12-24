@@ -1,3 +1,4 @@
+import { Logger } from './logger';
 import { IEvent, ISermon, INewsItem, ContentItem, ContentCategory } from '../types';
 import { StorageManager } from './storage';
 
@@ -100,68 +101,119 @@ const STORAGE_KEYS = {
 // Helper to simulate network delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Validation Helpers
+const validateItem = (item: unknown, category: ContentCategory) => {
+  const data = item as Record<string, unknown>;
+  if (!data) throw new Error("Item cannot be null or undefined");
+  if (!data.title) throw new Error("Title is required");
+  if (!data.description) throw new Error("Description is required");
+  
+  if (category === 'sermon') {
+    if (!data.speaker) throw new Error("Speaker is required for sermons");
+    if (!data.videoUrl) throw new Error("Video URL is required for sermons");
+  }
+  if (category === 'event') {
+    if (!data.date) throw new Error("Date is required for events");
+    if (!data.location) throw new Error("Location is required for events");
+  }
+};
+
+const safeExecute = async <T>(operation: () => Promise<T>, errorMessage: string): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error) {
+    Logger.error(errorMessage, { error });
+    throw error;
+  }
+};
+
 export const api = {
   // --- READ ---
   getEvents: async (): Promise<IEvent[]> => {
-    await delay(500);
-    return StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
+    return safeExecute(async () => {
+      await delay(500);
+      const data = StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
+      if (!Array.isArray(data)) throw new Error("Invalid data format for events");
+      return data;
+    }, "Failed to fetch events");
   },
+
   getSermons: async (): Promise<ISermon[]> => {
-    await delay(500);
-    return StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
+    return safeExecute(async () => {
+      await delay(500);
+      const data = StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
+      if (!Array.isArray(data)) throw new Error("Invalid data format for sermons");
+      return data;
+    }, "Failed to fetch sermons");
   },
+
   getNews: async (): Promise<INewsItem[]> => {
-    await delay(500);
-    return StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
+    return safeExecute(async () => {
+      await delay(500);
+      const data = StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
+      if (!Array.isArray(data)) throw new Error("Invalid data format for news");
+      return data;
+    }, "Failed to fetch news");
   },
 
   // --- CREATE ---
   createItem: async (category: ContentCategory, item: Omit<ContentItem, 'id'>): Promise<void> => {
-    await delay(500);
-    const newItem = { ...item, id: Date.now().toString() };
-    
-    if (category === 'event') {
-      const items = StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
-      StorageManager.setItem(STORAGE_KEYS.EVENTS, [newItem as IEvent, ...items]);
-    } else if (category === 'sermon') {
-      const items = StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
-      StorageManager.setItem(STORAGE_KEYS.SERMONS, [newItem as ISermon, ...items]);
-    } else {
-      const items = StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
-      StorageManager.setItem(STORAGE_KEYS.NEWS, [newItem as INewsItem, ...items]);
-    }
+    return safeExecute(async () => {
+      validateItem(item, category);
+      await delay(500);
+      const newItem = { ...item, id: Date.now().toString() };
+      
+      if (category === 'event') {
+        const items = StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
+        StorageManager.setItem(STORAGE_KEYS.EVENTS, [newItem as IEvent, ...items]);
+      } else if (category === 'sermon') {
+        const items = StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
+        StorageManager.setItem(STORAGE_KEYS.SERMONS, [newItem as ISermon, ...items]);
+      } else {
+        const items = StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
+        StorageManager.setItem(STORAGE_KEYS.NEWS, [newItem as INewsItem, ...items]);
+      }
+    }, `Failed to create ${category}`);
   },
 
   // --- UPDATE ---
   updateItem: async (category: ContentCategory, id: string, updates: Partial<ContentItem>): Promise<void> => {
-    await delay(500);
-    if (category === 'event') {
-      const items = StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
-      const updated = items.map(i => i.id === id ? { ...i, ...updates } : i);
-      StorageManager.setItem(STORAGE_KEYS.EVENTS, updated);
-    } else if (category === 'sermon') {
-      const items = StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
-      const updated = items.map(i => i.id === id ? { ...i, ...updates } : i);
-      StorageManager.setItem(STORAGE_KEYS.SERMONS, updated);
-    } else {
-      const items = StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
-      const updated = items.map(i => i.id === id ? { ...i, ...updates } : i);
-      StorageManager.setItem(STORAGE_KEYS.NEWS, updated);
-    }
+    return safeExecute(async () => {
+      if (!id) throw new Error("ID is required for update");
+      await delay(500);
+      
+      if (category === 'event') {
+        const items = StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
+        const updated = items.map(i => i.id === id ? { ...i, ...updates } : i);
+        StorageManager.setItem(STORAGE_KEYS.EVENTS, updated);
+      } else if (category === 'sermon') {
+        const items = StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
+        const updated = items.map(i => i.id === id ? { ...i, ...updates } : i);
+        StorageManager.setItem(STORAGE_KEYS.SERMONS, updated);
+      } else {
+        const items = StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
+        const updated = items.map(i => i.id === id ? { ...i, ...updates } : i);
+        StorageManager.setItem(STORAGE_KEYS.NEWS, updated);
+      }
+    }, `Failed to update ${category}`);
   },
 
   // --- DELETE ---
   deleteItem: async (category: ContentCategory, id: string): Promise<void> => {
-    await delay(500);
-    if (category === 'event') {
-      const items = StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
-      StorageManager.setItem(STORAGE_KEYS.EVENTS, items.filter(i => i.id !== id));
-    } else if (category === 'sermon') {
-      const items = StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
-      StorageManager.setItem(STORAGE_KEYS.SERMONS, items.filter(i => i.id !== id));
-    } else {
-      const items = StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
-      StorageManager.setItem(STORAGE_KEYS.NEWS, items.filter(i => i.id !== id));
-    }
+    return safeExecute(async () => {
+      if (!id) throw new Error("ID is required for deletion");
+      await delay(500);
+      
+      if (category === 'event') {
+        const items = StorageManager.getItem<IEvent[]>(STORAGE_KEYS.EVENTS, DEFAULT_EVENTS);
+        StorageManager.setItem(STORAGE_KEYS.EVENTS, items.filter(i => i.id !== id));
+      } else if (category === 'sermon') {
+        const items = StorageManager.getItem<ISermon[]>(STORAGE_KEYS.SERMONS, DEFAULT_SERMONS);
+        StorageManager.setItem(STORAGE_KEYS.SERMONS, items.filter(i => i.id !== id));
+      } else {
+        const items = StorageManager.getItem<INewsItem[]>(STORAGE_KEYS.NEWS, DEFAULT_NEWS);
+        StorageManager.setItem(STORAGE_KEYS.NEWS, items.filter(i => i.id !== id));
+      }
+    }, `Failed to delete ${category}`);
   }
 };
