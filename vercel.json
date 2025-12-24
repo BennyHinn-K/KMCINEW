@@ -1,0 +1,5 @@
+{
+  "name": "kmcinew",
+  "framework": "vite",
+  "installCommand": "npm install --legacy-peer-deps"
+}
