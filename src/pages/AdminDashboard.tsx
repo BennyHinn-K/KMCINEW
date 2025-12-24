@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu, Download } from 'lucide-react';
 import LiveStudio from '../components/admin/LiveStudio';
 import ContentManager from '../components/admin/ContentManager';
 import { useToast, ToastContainer } from '../components/ui/use-toast';
@@ -66,6 +66,14 @@ const AdminDashboard = () => {
             <h2 className="text-xl font-bold text-gray-800 capitalize">{activeTab}</h2>
           </div>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={handleBackup}
+              className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full transition-colors"
+              title="Backup Data"
+            >
+              <Download className="w-4 h-4" />
+              <span className="text-sm font-medium hidden sm:inline">Backup</span>
+            </button>
             <div className="flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full border border-green-100">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-green-700">System Online</span>
