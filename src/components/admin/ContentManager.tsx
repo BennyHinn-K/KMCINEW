@@ -125,14 +125,14 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        setFormData({ ...formData, imageUrl: result });
+        setFormData({ ...formData, imageUrl: result } as Partial<ContentItem>);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleClearFile = () => {
-    setFormData({ ...formData, imageUrl: '' });
+    setFormData({ ...formData, imageUrl: '' } as Partial<ContentItem>);
   };
 
   // Filtering
@@ -318,7 +318,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                   </label>
                   <MediaDropzone 
                       onDrop={handleFileDrop}
-                      initialPreview={(formData as IEvent).imageUrl || (formData as ISermon).thumbnail || ''}
+                      initialPreview={(formData as any).imageUrl || (formData as any).thumbnail || ''}
                       onClear={handleClearFile}
                       accept={{
                           'image/jpeg': [],
