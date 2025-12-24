@@ -25,6 +25,10 @@ const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { toasts, addToast } = useToast();
 
+  useEffect(() => {
+    Logger.info('AdminDashboard mounted');
+  }, []);
+
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
       localStorage.removeItem('kmci_admin_session');

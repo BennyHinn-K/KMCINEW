@@ -11,10 +11,25 @@ const Login = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passkey === import.meta.env.VITE_ADMIN_PASSKEY) {
-      localStorage.setItem('kmci_admin_session', 'true');
-      Logger.access('Admin login successful');
-      navigate('/admin/dashboard');
+    const envPasskey = import.meta.env.VITE_ADMIN_PASSKEY;
+    
+    if (!envPasskey) {
+      Logger.error('System Configuration Error: VITE_ADMIN_PASSKEY is missing');
+      setError('System configuration error: Passkey not configured.');
+      return;
+    }
+
+    const trimmedPasskey = passkey.trim();
+    
+    if (trimmedPasskey === envPasskey) {
+      try {
+        localStorage.setItem('kmci_admin_session', 'true');
+        Logger.access('Admin login successful');
+        navigate('/admin/dashboard');
+      } catch (err) {
+        Logger.error('Login Storage Error', { error: err });
+        setError('Failed to save session. Check browser settings.');
+      }
     } else {
       Logger.warn('Failed login attempt', { timestamp: new Date() });
       setError('Invalid passkey provided.');
