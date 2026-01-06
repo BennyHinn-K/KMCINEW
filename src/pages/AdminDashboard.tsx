@@ -1,4 +1,4 @@
-import { useState } from 'react';
+ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Download } from 'lucide-react';
 import LiveStudio from '../components/admin/LiveStudio';
@@ -7,6 +7,7 @@ import { useToast, ToastContainer } from '../components/ui/use-toast';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import DashboardOverview from '../components/admin/DashboardOverview';
 import { DashboardTab, ChartDataPoint } from '../types';
+import { Logger } from '../lib/logger';
 
 // Mock Analytics Data
 const CHART_DATA: ChartDataPoint[] = [
@@ -26,13 +27,51 @@ const AdminDashboard = () => {
   const { toasts, addToast } = useToast();
 
   useEffect(() => {
-    Logger.info('AdminDashboard mounted');
+    const ttfp = typeof performance !== 'undefined' ? performance.now() : null;
+    Logger.info('AdminDashboard mounted', { ttfp });
   }, []);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
       localStorage.removeItem('kmci_admin_session');
       navigate('/login');
+    }
+  };
+
+  const handleBackup = () => {
+    try {
+      const backupData: Record<string, string> = {};
+      let count = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('kmci_app_v1_')) {
+          const value = localStorage.getItem(key);
+          if (value) {
+            backupData[key] = value;
+            count++;
+          }
+        }
+      }
+
+      if (count === 0) {
+        addToast('No data to backup', 'error');
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kmci_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast(`Backup created with ${count} items`, 'success');
+      Logger.info('Backup created', { count });
+    } catch (error) {
+      Logger.error('Backup failed', { error });
+      addToast('Backup failed', 'error');
     }
   };
 

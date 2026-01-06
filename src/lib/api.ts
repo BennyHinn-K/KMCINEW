@@ -1,6 +1,17 @@
 import { Logger } from './logger';
 import { IEvent, ISermon, INewsItem, ContentItem, ContentCategory } from '../types';
 import { StorageManager } from './storage';
+ 
+export interface ApiError {
+  code: string;
+  message: string;
+}
+
+export interface ApiResponse<T> {
+  status: number;
+  data?: T;
+  error?: ApiError;
+}
 
 // Mock Data Defaults
 const DEFAULT_EVENTS: IEvent[] = [
@@ -215,5 +226,50 @@ export const api = {
         StorageManager.setItem(STORAGE_KEYS.NEWS, items.filter(i => i.id !== id));
       }
     }, `Failed to delete ${category}`);
+  },
+
+  adminGetItems: async (category: ContentCategory): Promise<ApiResponse<ContentItem[]>> => {
+    try {
+      let data: ContentItem[];
+      if (category === 'event') data = await api.getEvents();
+      else if (category === 'sermon') data = await api.getSermons();
+      else data = await api.getNews();
+      return { status: 200, data };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      return { status: 500, error: { code: 'FETCH_ERROR', message } };
+    }
+  },
+
+  adminCreateItem: async (category: ContentCategory, item: Omit<ContentItem, 'id'>): Promise<ApiResponse<ContentItem>> => {
+    try {
+      await api.createItem(category, item);
+      const created: ContentItem = { ...(item as ContentItem), id: Date.now().toString() };
+      return { status: 200, data: created };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      const code = category === 'sermon' ? 'VALIDATION_SERMON' : category === 'event' ? 'VALIDATION_EVENT' : 'VALIDATION_ANNOUNCEMENT';
+      return { status: 400, error: { code, message } };
+    }
+  },
+
+  adminUpdateItem: async (category: ContentCategory, id: string, updates: Partial<ContentItem>): Promise<ApiResponse<null>> => {
+    try {
+      await api.updateItem(category, id, updates);
+      return { status: 200, data: null };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      return { status: 400, error: { code: 'UPDATE_ERROR', message } };
+    }
+  },
+
+  adminDeleteItem: async (category: ContentCategory, id: string): Promise<ApiResponse<null>> => {
+    try {
+      await api.deleteItem(category, id);
+      return { status: 200, data: null };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      return { status: 400, error: { code: 'DELETE_ERROR', message } };
+    }
   }
 };

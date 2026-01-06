@@ -8,6 +8,8 @@ interface MediaDropzoneProps {
   onClear?: () => void;
   accept?: Accept;
   maxFiles?: number;
+  maxSize?: number;
+  className?: string;
 }
 
 const MediaDropzone: React.FC<MediaDropzoneProps> = ({
@@ -19,17 +21,20 @@ const MediaDropzone: React.FC<MediaDropzoneProps> = ({
     'image/png': [],
     'image/webp': []
   },
-  maxFiles = 1
+  maxFiles = 1,
+  maxSize,
+  className = ''
 }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept,
-    maxFiles
+    maxFiles,
+    maxSize
   });
 
   if (initialPreview) {
     return (
-      <div className="relative w-full h-48 bg-gray-50 rounded-lg border-2 border-gray-200 border-dashed overflow-hidden group">
+      <div className={`relative w-full h-48 bg-gray-50 rounded-lg border-2 border-gray-200 border-dashed overflow-hidden group ${className}`}>
         <img 
           src={initialPreview} 
           alt="Preview" 
@@ -52,7 +57,7 @@ const MediaDropzone: React.FC<MediaDropzoneProps> = ({
     <div
       {...getRootProps()}
       className={`w-full h-48 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors
-        ${isDragActive ? 'border-amber-500 bg-amber-50' : 'border-gray-300 hover:border-amber-400 hover:bg-gray-50'}`}
+        ${isDragActive ? 'border-amber-500 bg-amber-50' : 'border-gray-300 hover:border-amber-400 hover:bg-gray-50'} ${className}`}
     >
       <input {...getInputProps()} />
       <div className="bg-slate-100 p-3 rounded-full mb-3">

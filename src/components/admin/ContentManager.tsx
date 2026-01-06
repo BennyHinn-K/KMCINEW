@@ -12,17 +12,20 @@ import { api } from '../../lib/api';
 import { ContentCategory, ContentItem, ISermon } from '../../types';
 import MediaDropzone from '../ui/MediaDropzone';
 import SermonForm from './SermonForm';
+import { Logger } from '../../lib/logger';
 
 interface ContentManagerProps {
   category: ContentCategory;
   title: string;
   onNotify: (msg: string, type: 'success' | 'error') => void;
+  searchDebounce?: number;
 }
 
-const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) => {
+const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify, searchDebounce = 200 }) => {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
   
@@ -34,16 +37,29 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
     loadData();
   }, [category]);
 
+  useEffect(() => {
+    if (searchDebounce <= 0) {
+      setDebouncedSearch(searchTerm);
+      return;
+    }
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), searchDebounce);
+    return () => clearTimeout(t);
+  }, [searchTerm, searchDebounce]);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      let data: ContentItem[];
-      if (category === 'sermon') data = await api.getSermons();
-      else if (category === 'event') data = await api.getEvents();
-      else data = await api.getNews();
-      setItems(data);
-    } catch {
+      const res = await api.adminGetItems(category);
+      if (res.status === 200 && res.data) {
+        setItems(res.data);
+        Logger.info('Admin data loaded', { category, count: res.data.length });
+      } else {
+        onNotify("Failed to load data", "error");
+        Logger.error('Admin data load error', { category, error: res.error });
+      }
+    } catch (e) {
       onNotify("Failed to load data", "error");
+      Logger.error('Admin data load exception', { category, error: e });
     } finally {
       setLoading(false);
     }
@@ -52,11 +68,18 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
-      await api.deleteItem(category, id);
-      setItems(prev => prev.filter(i => i.id !== id));
-      onNotify("Item deleted successfully", "success");
-    } catch {
+      const res = await api.adminDeleteItem(category, id);
+      if (res.status === 200) {
+        setItems(prev => prev.filter(i => i.id !== id));
+        onNotify("Item deleted successfully", "success");
+        Logger.access('Admin delete item', { category, id });
+      } else {
+        onNotify(res.error?.message || "Failed to delete item", "error");
+        Logger.error('Admin delete error', { category, id, error: res.error });
+      }
+    } catch (e) {
       onNotify("Failed to delete item", "error");
+      Logger.error('Admin delete exception', { category, id, error: e });
     }
   };
 
@@ -96,16 +119,31 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
       } as Omit<ContentItem, 'id'>;
 
       if (editingItem) {
-        await api.updateItem(category, editingItem.id, itemData);
-        onNotify("Item updated successfully", "success");
+        const res = await api.adminUpdateItem(category, editingItem.id, itemData);
+        if (res.status === 200) {
+          onNotify("Item updated successfully", "success");
+          Logger.access('Admin update item', { category, id: editingItem.id });
+        } else {
+          onNotify(res.error?.message || "Failed to update item", "error");
+          Logger.error('Admin update error', { category, id: editingItem.id, error: res.error });
+          return;
+        }
       } else {
-        await api.createItem(category, itemData);
-        onNotify("Item created successfully", "success");
+        const res = await api.adminCreateItem(category, itemData);
+        if (res.status === 200) {
+          onNotify("Item created successfully", "success");
+          Logger.access('Admin create item', { category });
+        } else {
+          onNotify(res.error?.message || "Failed to create item", "error");
+          Logger.error('Admin create error', { category, error: res.error });
+          return;
+        }
       }
       setIsModalOpen(false);
       loadData();
-    } catch {
+    } catch (e) {
       onNotify("Failed to save item", "error");
+      Logger.error('Admin save exception', { category, error: e });
     }
   };
 
@@ -128,11 +166,18 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
 
   const toggleFeatured = async (item: ContentItem) => {
     try {
-      await api.updateItem(category, item.id, { featured: !item.featured });
-      loadData(); // Reload to reflect changes
-      onNotify(`Item ${!item.featured ? 'featured' : 'unfeatured'}`, "success");
-    } catch {
+      const res = await api.adminUpdateItem(category, item.id, { featured: !item.featured });
+      if (res.status === 200) {
+        loadData();
+        onNotify(`Item ${!item.featured ? 'featured' : 'unfeatured'}`, "success");
+        Logger.access('Admin toggle featured', { category, id: item.id, featured: !item.featured });
+      } else {
+        onNotify(res.error?.message || "Failed to update status", "error");
+        Logger.error('Admin toggle error', { category, id: item.id, error: res.error });
+      }
+    } catch (e) {
       onNotify("Failed to update status", "error");
+      Logger.error('Admin toggle exception', { category, id: item.id, error: e });
     }
   };
 
@@ -154,8 +199,9 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
   };
 
   // Filtering
-  const filteredItems = items.filter(item => 
-    item.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filterKey = (searchDebounce <= 0 ? searchTerm : debouncedSearch).toLowerCase();
+  const filteredItems = items.filter(item =>
+    (item.title || '').toLowerCase().includes(filterKey)
   );
 
   return (
@@ -226,12 +272,14 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button 
+                        aria-label="Edit Item"
                         onClick={() => openModal(item)}
                         className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
+                        aria-label="Delete Item"
                         onClick={() => handleDelete(item.id)}
                         className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
                       >
@@ -340,7 +388,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ category, onNotify }) =
                   </label>
                   <MediaDropzone 
                       onDrop={handleFileDrop}
-                      initialPreview={(formData as ContentItem).imageUrl || (formData as ISermon).thumbnail || ''}
+                      initialPreview={(formData as Partial<ContentItem> & { imageUrl?: string }).imageUrl || ''}
                       onClear={handleClearFile}
                       accept={{
                           'image/jpeg': [],

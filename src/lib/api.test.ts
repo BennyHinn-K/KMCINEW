@@ -3,6 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { api } from './api';
+import type { ContentItem } from '../types';
 
 describe('API Data Integrity', () => {
   it('should ensure all sermons have a description', async () => {
@@ -28,7 +29,7 @@ describe('API Data Integrity', () => {
       category: 'sermon' as const,
       // Missing speaker and videoUrl
     };
-    await expect(api.createItem('sermon', invalidSermon as any)).rejects.toThrow();
+    await expect(api.createItem('sermon', invalidSermon as unknown as ContentItem)).rejects.toThrow();
   });
 
   it('should reject invalid event creation', async () => {
@@ -38,6 +39,6 @@ describe('API Data Integrity', () => {
       category: 'event' as const,
       // Missing date and location
     };
-    await expect(api.createItem('event', invalidEvent as any)).rejects.toThrow();
+    await expect(api.createItem('event', invalidEvent as unknown as ContentItem)).rejects.toThrow();
   });
 });
