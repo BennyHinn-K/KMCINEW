@@ -10,10 +10,12 @@
     "lint:dualite": "eslint --config eslint.dualite.config.js .",
     "test": "vitest",
     "tsc:dualite": "yarn tsc -p tsconfig.dualite.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
+    "@vercel/blob": "^0.24.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
@@ -42,6 +44,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",
+    "husky": "^9.1.7",
     "jsdom": "^27.3.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",

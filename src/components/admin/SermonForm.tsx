@@ -128,47 +128,72 @@ const SermonForm: React.FC<SermonFormProps> = ({
     if (!file) return;
 
     // Strict File Validation
-    const validTypes = ['video/mp4', 'video/webm', 'video/ogg'];
-    const maxSize = 500 * 1024 * 1024; // 500MB
+    const validTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
 
     if (!validTypes.includes(file.type)) {
-      setErrors(prev => ({ ...prev, videoFile: 'Invalid file type. Only MP4, WebM, and OGG are allowed.' }));
+      setErrors(prev => ({ ...prev, videoFile: 'Invalid file type. Only MP4, MOV, and AVI are allowed.' }));
       return;
     }
 
     if (file.size > maxSize) {
-      setErrors(prev => ({ ...prev, videoFile: 'File size exceeds 500MB limit.' }));
+      setErrors(prev => ({ ...prev, videoFile: 'File size exceeds 2GB limit.' }));
       return;
     }
 
     setVideoFile(file);
     setErrors(prev => ({ ...prev, videoFile: '' }));
     
-    // Simulate Upload Progress
+    // Upload via server-generated URL
     setIsUploading(true);
     setUploadProgress(0);
     
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 95;
+    const doUpload = async () => {
+      try {
+        const token = localStorage.getItem('kmci_admin_token') || '';
+        const resp = await fetch('/api/videos/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+            sizeBytes: file.size,
+          }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          setErrors(prev => ({ ...prev, videoFile: err?.error?.message || 'Failed to get upload URL' }));
+          setIsUploading(false);
+          return;
         }
-        return prev + 5;
-      });
-    }, 200);
-
-    // Convert to Base64 (Simulating upload completion)
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      clearInterval(interval);
-      setUploadProgress(100);
-      setTimeout(() => {
+        const { uploadUrl } = await resp.json();
+        const fd = new FormData();
+        fd.append('file', file);
+        const up = await fetch(uploadUrl, { method: 'POST', body: fd });
+        if (!up.ok) {
+          setErrors(prev => ({ ...prev, videoFile: 'Upload failed' }));
+          setIsUploading(false);
+          return;
+        }
+        const result = await up.json();
+        const blobUrl = result?.url || result?.blob?.url || '';
+        if (!blobUrl) {
+          setErrors(prev => ({ ...prev, videoFile: 'Upload did not return a URL' }));
+          setIsUploading(false);
+          return;
+        }
+        setUploadProgress(100);
         setIsUploading(false);
-        setFormData(prev => ({ ...prev, videoUrl: e.target?.result as string }));
-      }, 500);
+        setFormData(prev => ({ ...prev, videoUrl: blobUrl }));
+      } catch {
+        setErrors(prev => ({ ...prev, videoFile: 'Unexpected error during upload' }));
+        setIsUploading(false);
+      }
     };
-    reader.readAsDataURL(file);
+    doUpload();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
