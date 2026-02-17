@@ -9,7 +9,7 @@
 // - Designed to work with Vercel Blob, but can be adapted to other storage
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createUploadUrl } from '@vercel/blob';
+import { put } from '@vercel/blob';
 
 const MAX_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
@@ -92,6 +92,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const filename = typeof body['filename'] === 'string' ? (body['filename'] as string) : '';
   const contentType = typeof body['contentType'] === 'string' ? (body['contentType'] as string) : '';
   const sizeBytes = typeof body['sizeBytes'] === 'number' ? (body['sizeBytes'] as number) : NaN;
+  const dataBase64 = typeof body['dataBase64'] === 'string' ? (body['dataBase64'] as string) : '';
 
   if (!filename || typeof filename !== 'string') {
     return res.status(400).json({ error: { code: 'VALIDATION', message: 'filename is required' } });
@@ -111,18 +112,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!hasValidExtension(filename)) {
     return res.status(415).json({ error: { code: 'UNSUPPORTED_EXTENSION', message: 'Filename must end with .mp4, .mov, or .avi' } });
   }
+  if (!dataBase64) {
+    return res.status(400).json({ error: { code: 'VALIDATION', message: 'dataBase64 is required' } });
+  }
 
   try {
-    const uploadUrl = await createUploadUrl({
-      allowedContentTypes: ALLOWED_TYPES,
+    const buffer = Buffer.from(dataBase64, 'base64');
+    const blob = await put(filename, buffer, {
+      access: 'public',
       contentType,
-      // optional: set a path prefix, e.g., sermons/
-      // prefix: 'sermons/',
-      // optional callback to confirm upload
     });
 
     return res.status(200).json({
-      uploadUrl,
+      uploadUrl: blob.url,
       constraints: {
         maxSizeBytes: MAX_SIZE_BYTES,
         allowedTypes: ALLOWED_TYPES,

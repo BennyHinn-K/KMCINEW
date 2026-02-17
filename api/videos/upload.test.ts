@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import handler from './upload';
+import handler from './upload.js';
 
 vi.mock('@vercel/blob', () => ({
-  createUploadUrl: vi.fn(async () => 'https://blob.example/upload-url'),
+  put: vi.fn(async () => ({
+    url: 'https://blob.example/uploaded-video-url',
+  })),
 }));
 
 type MockRes = VercelResponse & { jsonPayload?: unknown; statusCode: number };
@@ -21,22 +23,21 @@ function mockReqRes(
     env: {},
   } as unknown as VercelRequest;
 
-  const res: MockRes = {
-    statusCode: 200,
-    status(code: number) {
-      this.statusCode = code;
-      return this;
-    },
-    json(payload: unknown) {
-      this.jsonPayload = payload;
-      return this;
-    },
-    // minimal no-op implementations
-    send: () => undefined,
-    setHeader: () => undefined,
-    getHeader: () => undefined,
-    redirect: () => undefined,
-  } as unknown as MockRes;
+  const res = {} as MockRes;
+  res.statusCode = 200;
+  res.send = (() => undefined) as unknown as MockRes['send'];
+  res.setHeader = (() => undefined) as unknown as MockRes['setHeader'];
+  res.getHeader = (() => undefined) as unknown as MockRes['getHeader'];
+  res.redirect = (() => undefined) as unknown as MockRes['redirect'];
+  // chainable helpers without using `this`
+  res.status = (code: number) => {
+    res.statusCode = code;
+    return res;
+  };
+  res.json = (payload: unknown) => {
+    res.jsonPayload = payload;
+    return res;
+  };
 
   return { req, res };
 }
@@ -67,7 +68,12 @@ describe('upload API', () => {
   it('accepts raw ADMIN_PASSKEY as token', async () => {
     const { req, res } = mockReqRes('POST', {
       headers: { authorization: `Bearer ${adminPass}` },
-      body: { filename: 'a.mp4', contentType: 'video/mp4', sizeBytes: 1024 },
+      body: {
+        filename: 'a.mp4',
+        contentType: 'video/mp4',
+        sizeBytes: 1024,
+        dataBase64: Buffer.from('test-data').toString('base64'),
+      },
     });
     await handler(req, res);
     expect(res.statusCode).toBe(200);
@@ -116,7 +122,12 @@ describe('upload API', () => {
     const token = `${b64(header)}.${b64(payload)}.sig`;
     const { req, res } = mockReqRes('POST', {
       headers: { authorization: `Bearer ${token}` },
-      body: { filename: 'a.mov', contentType: 'video/quicktime', sizeBytes: 2048 },
+      body: {
+        filename: 'a.mov',
+        contentType: 'video/quicktime',
+        sizeBytes: 2048,
+        dataBase64: Buffer.from('test-data').toString('base64'),
+      },
     });
     await handler(req, res);
     expect(res.statusCode).toBe(200);

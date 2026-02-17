@@ -144,42 +144,41 @@ const SermonForm: React.FC<SermonFormProps> = ({
     setVideoFile(file);
     setErrors(prev => ({ ...prev, videoFile: '' }));
     
-    // Upload via server-generated URL
     setIsUploading(true);
     setUploadProgress(0);
     
     const doUpload = async () => {
       try {
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += 1) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const dataBase64 = btoa(binary);
+
         const token = localStorage.getItem('kmci_admin_token') || '';
         const resp = await fetch('/api/videos/upload', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             filename: file.name,
             contentType: file.type,
             sizeBytes: file.size,
+            dataBase64,
           }),
         });
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
-          setErrors(prev => ({ ...prev, videoFile: err?.error?.message || 'Failed to get upload URL' }));
+          setErrors(prev => ({ ...prev, videoFile: err?.error?.message || 'Failed to upload video' }));
           setIsUploading(false);
           return;
         }
         const { uploadUrl } = await resp.json();
-        const fd = new FormData();
-        fd.append('file', file);
-        const up = await fetch(uploadUrl, { method: 'POST', body: fd });
-        if (!up.ok) {
-          setErrors(prev => ({ ...prev, videoFile: 'Upload failed' }));
-          setIsUploading(false);
-          return;
-        }
-        const result = await up.json();
-        const blobUrl = result?.url || result?.blob?.url || '';
+        const blobUrl = typeof uploadUrl === 'string' ? uploadUrl : '';
         if (!blobUrl) {
           setErrors(prev => ({ ...prev, videoFile: 'Upload did not return a URL' }));
           setIsUploading(false);
