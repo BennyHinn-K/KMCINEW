@@ -11,7 +11,6 @@ import { AnimatePresence } from 'framer-motion';
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
 const Ministries = lazy(() => import('./pages/Ministries'));
-const Sermons = lazy(() => import('./pages/Sermons'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Announcements = lazy(() => import('./pages/Announcements'));
 const Donate = lazy(() => import('./pages/Donate'));
@@ -26,10 +25,10 @@ function App() {
     if (loading) {
       const timer = setTimeout(() => {
         setLoading(false);
-      }, 1000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [loading]);
 
   return (
     <Router>
@@ -50,7 +49,6 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/ministries" element={<Ministries />} />
-              <Route path="/sermons" element={<Sermons />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/donate" element={<Donate />} />

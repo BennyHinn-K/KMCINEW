@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   Calendar, 
-  Video, 
   Megaphone, 
   LogOut, 
   Radio,
@@ -10,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DashboardTab } from '@/types';
+import { brandLogo } from '@/branding';
 
 interface AdminSidebarProps {
   activeTab: DashboardTab;
@@ -67,7 +67,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     )}>
       <div className="p-6 border-b border-slate-800 flex justify-between items-center flex-shrink-0">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">K</div>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 border border-white/10 overflow-hidden">
+            <img
+              src={brandLogo}
+              alt="KMCI logo"
+              className="w-8 h-8 object-contain"
+            />
+          </div>
           <span className="text-xl font-bold tracking-tight">KMCI Admin</span>
         </div>
         <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-400">
@@ -84,7 +90,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
         <div className="mb-8">
           <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Content Management</p>
-          <NavItem tab="sermons" activeTab={activeTab} setActiveTab={setActiveTab} setIsOpen={setIsOpen} icon={Video} label="Sermons" />
           <NavItem tab="events" activeTab={activeTab} setActiveTab={setActiveTab} setIsOpen={setIsOpen} icon={Calendar} label="Events" />
           <NavItem tab="announcements" activeTab={activeTab} setActiveTab={setActiveTab} setIsOpen={setIsOpen} icon={Megaphone} label="Announcements" />
         </div>

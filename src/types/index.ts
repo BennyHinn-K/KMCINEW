@@ -32,7 +32,7 @@ export interface INewsItem extends IBaseContent {
 
 export type ContentItem = IEvent | ISermon | INewsItem;
 
-export type DashboardTab = 'overview' | 'sermons' | 'events' | 'announcements' | 'live';
+export type DashboardTab = 'overview' | 'events' | 'announcements' | 'live';
 
 export interface DashboardStat {
   label: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { PlayCircle, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const HomeHero = () => {
   return (
@@ -32,13 +32,6 @@ const HomeHero = () => {
             Empowering believers to fulfill the Great Commission through evangelism, discipleship, and humanitarian outreach.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              to="/sermons"
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-gray-900 bg-white rounded-full hover:bg-gray-200 transition-all shadow-lg hover:shadow-xl"
-            >
-              <PlayCircle className="w-5 h-5 mr-2" />
-              Watch Sermons
-            </Link>
             <Link
               to="/donate"
               className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-amber-500 rounded-full hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/30"

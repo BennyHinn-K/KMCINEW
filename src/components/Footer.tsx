@@ -1,17 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin, Youtube } from 'lucide-react';
+import { brandLogo } from '../branding';
 
 const Footer = () => {
   return (
     <footer className="bg-gray-900 text-white pt-16 pb-8 border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          {/* Brand Info */}
           <div>
             <div className="flex items-center space-x-2 mb-6">
               <div className="bg-white/10 text-white p-2 rounded-lg border border-white/20">
-                <span className="font-bold text-xl tracking-tighter">KMCI</span>
+                <img
+                  src={brandLogo}
+                  alt="KMCI logo"
+                  className="w-10 h-10 rounded-md object-contain"
+                />
               </div>
               <span className="font-bold text-xl tracking-tight">Kingdom Missions</span>
             </div>
@@ -46,9 +50,6 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/ministries" className="text-gray-400 hover:text-amber-500 transition-colors">Ministries</Link>
-              </li>
-              <li>
-                <Link to="/sermons" className="text-gray-400 hover:text-amber-500 transition-colors">Sermons</Link>
               </li>
               <li>
                 <Link to="/announcements" className="text-gray-400 hover:text-amber-500 transition-colors">News & Events</Link>

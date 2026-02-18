@@ -6,19 +6,8 @@ import ContentManager from '../components/admin/ContentManager';
 import { useToast, ToastContainer } from '../components/ui/use-toast';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import DashboardOverview from '../components/admin/DashboardOverview';
-import { DashboardTab, ChartDataPoint } from '../types';
+import { DashboardTab } from '../types';
 import { Logger } from '../lib/logger';
-
-// Mock Analytics Data
-const CHART_DATA: ChartDataPoint[] = [
-  { name: 'Mon', visitors: 400, views: 240 },
-  { name: 'Tue', visitors: 300, views: 139 },
-  { name: 'Wed', visitors: 200, views: 980 },
-  { name: 'Thu', visitors: 278, views: 390 },
-  { name: 'Fri', visitors: 189, views: 480 },
-  { name: 'Sat', visitors: 239, views: 380 },
-  { name: 'Sun', visitors: 349, views: 430 },
-];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -128,15 +117,11 @@ const AdminDashboard = () => {
         <div className="flex-1 overflow-y-auto p-6">
           
           {activeTab === 'overview' && (
-            <DashboardOverview chartData={CHART_DATA} />
+            <DashboardOverview />
           )}
 
           {activeTab === 'live' && (
             <LiveStudio onNotify={addToast} />
-          )}
-
-          {activeTab === 'sermons' && (
-            <ContentManager category="sermon" title="Sermons" onNotify={addToast} />
           )}
 
           {activeTab === 'events' && (

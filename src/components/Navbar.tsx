@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { brandLogo } from '../branding';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +13,6 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
     { name: 'Ministries', path: '/ministries' },
-    { name: 'Sermons', path: '/sermons' },
     { name: 'News', path: '/announcements' },
     { name: 'Contact', path: '/contact' },
   ];
@@ -23,9 +23,11 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-20">
           <Link to="/" className="flex items-center space-x-2 group">
             <div className="p-2 rounded-lg bg-white/10 text-white border border-white/10">
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                  <path fillRule="evenodd" d="M12 2.25a.75.75 0 01.75.75v5.25H18a.75.75 0 010 1.5h-5.25V21a.75.75 0 01-1.5 0V9.75H6a.75.75 0 010-1.5h5.25V3a.75.75 0 01.75-.75z" clipRule="evenodd" />
-                </svg>
+              <img
+                src={brandLogo}
+                alt="KMCI logo"
+                className="w-8 h-8 rounded-md object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-xl leading-none tracking-tight text-white">
