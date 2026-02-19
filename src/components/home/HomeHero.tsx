@@ -25,8 +25,8 @@ const HomeHero = () => {
             Welcome to KMCI
           </span>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-            The center for <br />
-            <span className="text-amber-400">transformations for missions</span>
+            A center of <br />
+            <span className="text-amber-400">transformation for missions</span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-3xl mx-auto font-light leading-relaxed">
             Empowering believers to fulfill the Great Commission through evangelism, discipleship, and humanitarian outreach.
