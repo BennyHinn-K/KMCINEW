@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { del, list, put } from '@vercel/blob';
-import type { IEvent, INewsItem, ISermon } from '../../src/types.js';
+import type { IEvent, INewsItem, ISermon } from '../../src/types';
 import { DEFAULT_EVENTS, DEFAULT_NEWS, DEFAULT_SERMONS } from './defaults.js';
 
 export interface AuthRecord {
@@ -134,11 +134,11 @@ async function readFromBlob(): Promise<AppStore | null> {
 async function writeToBlob(store: AppStore): Promise<void> {
   const body = JSON.stringify(store);
   const options = {
-    access: 'private' as const,
+    access: 'private',
     contentType: 'application/json',
     addRandomSuffix: false,
     allowOverwrite: true,
-  };
+  } as unknown as Parameters<typeof put>[2];
   try {
     await put(BLOB_PATH, body, options);
   } catch {
@@ -147,7 +147,13 @@ async function writeToBlob(store: AppStore): Promise<void> {
       if (listed.blobs.length) {
         await del(listed.blobs.map((b) => b.url));
       }
-      await put(BLOB_PATH, body, { access: 'private', contentType: 'application/json', addRandomSuffix: false });
+      await put(
+        BLOB_PATH,
+        body,
+        { access: 'private', contentType: 'application/json', addRandomSuffix: false } as unknown as Parameters<
+          typeof put
+        >[2]
+      );
     } catch {
       /* best effort — do not cascade write errors into 500s */
     }

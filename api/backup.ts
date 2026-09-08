@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireAdmin } from './_lib/auth.js';
 import { readBody, sendError, sendJson } from './_lib/http.js';
 import { readStore, updateStore } from './_lib/store.js';
-import type { IEvent, INewsItem } from '../src/types.js';
+import type { IEvent, INewsItem } from '../src/types';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

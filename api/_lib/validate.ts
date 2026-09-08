@@ -1,4 +1,4 @@
-import type { ContentCategory, ContentItem } from '../../src/types.js';
+import type { ContentCategory, ContentItem } from '../../src/types';
 
 export function validateItem(item: unknown, category: ContentCategory): void {
   const data = item as Record<string, unknown>;
