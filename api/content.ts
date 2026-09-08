@@ -25,7 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const gate = await requireAdmin(req);
-    if (!gate.ok) return sendError(res, gate.status, 'AUTH_INVALID', gate.message);
+    if (!gate.ok) {
+      const fail = gate as { ok: false; status: number; message: string };
+      return sendError(res, fail.status, 'AUTH_INVALID', fail.message);
+    }
 
     if (!isManagedCategory(category)) {
       return sendError(res, 400, 'UNSUPPORTED_CATEGORY', 'Only events and announcements can be managed');

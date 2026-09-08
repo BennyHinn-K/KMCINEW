@@ -7,7 +7,10 @@ import type { IEvent, INewsItem } from '../src/types';
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const gate = await requireAdmin(req);
-    if (!gate.ok) return sendError(res, gate.status, 'AUTH_INVALID', gate.message);
+    if (!gate.ok) {
+      const fail = gate as { ok: false; status: number; message: string };
+      return sendError(res, fail.status, 'AUTH_INVALID', fail.message);
+    }
 
     if (req.method === 'GET') {
       const store = await readStore();
