@@ -31,6 +31,7 @@ export interface AppStore {
 
 const BLOB_PATH = 'kmci/store.json';
 const EMPTY_AUTH: AuthRecord = { salt: '', hash: '', tokenVersion: 1 };
+const MAX_LOCAL_STORE_BYTES = 1024 * 1024;
 
 function seedStore(): AppStore {
   return {
@@ -52,9 +53,27 @@ function projectRootDir(): string {
   }
 }
 
-function localFilePath(): string {
+function runtimeFilePath(): string {
   if (process.env.VERCEL) return path.join('/tmp', 'kmci-store.json');
   return path.join(projectRootDir(), 'data', 'kmci-store.json');
+}
+
+function bundledDataFilePath(): string | null {
+  if (!process.env.VERCEL) return null;
+  return path.join(projectRootDir(), 'data', 'kmci-store.json');
+}
+
+async function readFromFile(pathToFile: string): Promise<AppStore | null> {
+  try {
+    const file = await fs.readFile(pathToFile, 'utf8');
+    return normalize(JSON.parse(file) as Partial<AppStore>);
+  } catch {
+    return null;
+  }
+}
+
+function localFilePath(): string {
+  return runtimeFilePath();
 }
 
 function hasBlobToken(): boolean {
@@ -77,18 +96,21 @@ function normalize(raw: Partial<AppStore> | null | undefined): AppStore {
 }
 
 async function readFromFs(): Promise<AppStore | null> {
-  try {
-    const file = await fs.readFile(localFilePath(), 'utf8');
-    return normalize(JSON.parse(file) as Partial<AppStore>);
-  } catch {
-    return null;
-  }
+  const runtime = await readFromFile(runtimeFilePath());
+  if (runtime) return runtime;
+  const bundled = bundledDataFilePath();
+  if (bundled) return readFromFile(bundled);
+  return null;
 }
 
 async function writeToFs(store: AppStore): Promise<void> {
+  const body = JSON.stringify(store, null, 2);
+  if (Buffer.byteLength(body, 'utf8') > MAX_LOCAL_STORE_BYTES) {
+    throw new Error('Store data exceeds safe size limit (1MB) — check for oversized embedded image data in events or remove old entries.');
+  }
   const file = localFilePath();
   await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, JSON.stringify(store, null, 2), 'utf8');
+  await fs.writeFile(file, body, 'utf8');
 }
 
 async function readFromBlob(): Promise<AppStore | null> {
