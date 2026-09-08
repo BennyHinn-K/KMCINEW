@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { changePassword, requireAdmin } from '../_lib/auth';
-import { readBody, sendError, sendJson } from '../_lib/http';
+import { changePassword, requireAdmin } from '../_lib/auth.js';
+import { readBody, sendError, sendJson } from '../_lib/http.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

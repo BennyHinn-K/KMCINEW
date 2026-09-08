@@ -2,8 +2,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { del, list, put } from '@vercel/blob';
-import type { IEvent, INewsItem, ISermon } from '../../src/types';
-import { DEFAULT_EVENTS, DEFAULT_NEWS, DEFAULT_SERMONS } from './defaults';
+import type { IEvent, INewsItem, ISermon } from '../../src/types.js';
+import { DEFAULT_EVENTS, DEFAULT_NEWS, DEFAULT_SERMONS } from './defaults.js';
 
 export interface AuthRecord {
   salt: string;

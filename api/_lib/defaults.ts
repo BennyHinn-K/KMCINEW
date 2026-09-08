@@ -1,4 +1,4 @@
-import type { IEvent, INewsItem, ISermon } from '../../src/types';
+import type { IEvent, INewsItem, ISermon } from '../../src/types.js';
 
 export const DEFAULT_EVENTS: IEvent[] = [
   {
