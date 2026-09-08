@@ -45,47 +45,60 @@ async function deliverMail(payload: ContactMessage): Promise<boolean> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return sendError(res, 405, 'METHOD_NOT_ALLOWED', 'Only POST is allowed');
-  }
-
-  const body = readBody(req);
-  const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : '';
-  const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
-  const email = typeof body.email === 'string' ? body.email.trim() : '';
-  const message = typeof body.message === 'string' ? body.message.trim() : '';
-
-  if (!firstName || !lastName || !email || !message) {
-    return sendError(res, 400, 'VALIDATION', 'All fields are required');
-  }
-  if (!EMAIL_RE.test(email)) {
-    return sendError(res, 400, 'VALIDATION', 'Enter a valid email address');
-  }
-
-  const record: ContactMessage = {
-    id: `${Date.now()}`,
-    firstName,
-    lastName,
-    email,
-    message,
-    createdAt: new Date().toISOString(),
-    delivered: false,
-  };
-
   try {
-    record.delivered = await deliverMail(record);
-  } catch {
-    record.delivered = false;
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'METHOD_NOT_ALLOWED', 'Only POST is allowed');
+    }
+
+    const body = readBody(req);
+    const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : '';
+    const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
+    const email = typeof body.email === 'string' ? body.email.trim() : '';
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+
+    if (!firstName || !lastName || !email || !message) {
+      return sendError(res, 400, 'VALIDATION', 'All fields are required');
+    }
+    if (!EMAIL_RE.test(email)) {
+      return sendError(res, 400, 'VALIDATION', 'Enter a valid email address');
+    }
+
+    const record: ContactMessage = {
+      id: `${Date.now()}`,
+      firstName,
+      lastName,
+      email,
+      message,
+      createdAt: new Date().toISOString(),
+      delivered: false,
+    };
+
+    try {
+      record.delivered = await deliverMail(record);
+    } catch {
+      record.delivered = false;
+    }
+
+    try {
+      await updateStore((store) => ({
+        ...store,
+        contacts: [record, ...store.contacts].slice(0, 200),
+      }));
+    } catch {
+      return sendJson(res, 200, {
+        ok: true,
+        delivered: record.delivered,
+        stored: false,
+      });
+    }
+
+    return sendJson(res, 200, {
+      ok: true,
+      delivered: record.delivered,
+      stored: true,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal error';
+    return sendError(res, 500, 'INTERNAL', message);
   }
-
-  await updateStore((store) => ({
-    ...store,
-    contacts: [record, ...store.contacts].slice(0, 200),
-  }));
-
-  return sendJson(res, 200, {
-    ok: true,
-    delivered: record.delivered,
-    stored: true,
-  });
 }

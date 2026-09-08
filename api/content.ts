@@ -9,28 +9,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = req.method || 'GET';
   const category = queryString(req, 'category');
 
-  if (method === 'GET') {
-    const store = await readStore();
-    if (category === 'event') return sendJson(res, 200, { data: store.events });
-    if (category === 'announcement') return sendJson(res, 200, { data: store.announcements });
-    if (category === 'sermon') return sendJson(res, 200, { data: store.sermons });
-    return sendJson(res, 200, {
-      data: {
-        events: store.events,
-        announcements: store.announcements,
-        sermons: store.sermons,
-      },
-    });
-  }
-
-  const gate = await requireAdmin(req);
-  if (!gate.ok) return sendError(res, gate.status, 'AUTH_INVALID', gate.message);
-
-  if (!isManagedCategory(category)) {
-    return sendError(res, 400, 'UNSUPPORTED_CATEGORY', 'Only events and announcements can be managed');
-  }
-
   try {
+    if (method === 'GET') {
+      const store = await readStore();
+      if (category === 'event') return sendJson(res, 200, { data: store.events });
+      if (category === 'announcement') return sendJson(res, 200, { data: store.announcements });
+      if (category === 'sermon') return sendJson(res, 200, { data: store.sermons });
+      return sendJson(res, 200, {
+        data: {
+          events: store.events,
+          announcements: store.announcements,
+          sermons: store.sermons,
+        },
+      });
+    }
+
+    const gate = await requireAdmin(req);
+    if (!gate.ok) return sendError(res, gate.status, 'AUTH_INVALID', gate.message);
+
+    if (!isManagedCategory(category)) {
+      return sendError(res, 400, 'UNSUPPORTED_CATEGORY', 'Only events and announcements can be managed');
+    }
+
     if (method === 'POST') {
       const body = readBody(req);
       validateItem({ ...body, category }, category);
@@ -76,10 +76,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       return sendJson(res, 200, { data: null });
     }
+
+    return sendError(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Request failed';
-    return sendError(res, 400, 'VALIDATION', message);
+    const status = method === 'GET' ? 500 : 400;
+    const code = method === 'GET' ? 'INTERNAL' : 'VALIDATION';
+    return sendError(res, status, code, message);
   }
-
-  return sendError(res, 405, 'METHOD_NOT_ALLOWED', 'Method not allowed');
 }

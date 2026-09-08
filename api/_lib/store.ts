@@ -109,7 +109,12 @@ async function writeToFs(store: AppStore): Promise<void> {
     throw new Error('Store data exceeds safe size limit (1MB) — check for oversized embedded image data in events or remove old entries.');
   }
   const file = localFilePath();
-  await fs.mkdir(path.dirname(file), { recursive: true });
+  try {
+    await fs.mkdir(path.dirname(file), { recursive: true });
+  } catch (mkdirErr) {
+    const dir = path.dirname(file);
+    if (dir !== '/tmp') throw mkdirErr;
+  }
   await fs.writeFile(file, body, 'utf8');
 }
 
@@ -137,11 +142,15 @@ async function writeToBlob(store: AppStore): Promise<void> {
   try {
     await put(BLOB_PATH, body, options);
   } catch {
-    const listed = await list({ prefix: 'kmci/' });
-    if (listed.blobs.length) {
-      await del(listed.blobs.map((b) => b.url));
+    try {
+      const listed = await list({ prefix: 'kmci/' });
+      if (listed.blobs.length) {
+        await del(listed.blobs.map((b) => b.url));
+      }
+      await put(BLOB_PATH, body, { access: 'private', contentType: 'application/json', addRandomSuffix: false });
+    } catch {
+      /* best effort — do not cascade write errors into 500s */
     }
-    await put(BLOB_PATH, body, { access: 'private', contentType: 'application/json', addRandomSuffix: false });
   }
 }
 
@@ -165,8 +174,12 @@ export async function readStore(): Promise<AppStore> {
     const fromFs = await readFromFs();
     if (fromFs) return fromFs;
     const seeded = seedStore();
-    if (hasBlobToken()) await writeToBlob(seeded);
-    else await writeToFs(seeded);
+    try {
+      if (hasBlobToken()) await writeToBlob(seeded);
+      else await writeToFs(seeded);
+    } catch {
+      /* write failure on seed is non-fatal — return the in-memory seed */
+    }
     return seeded;
   });
 }
