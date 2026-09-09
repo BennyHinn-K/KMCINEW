@@ -2,8 +2,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { del, list, put } from '@vercel/blob';
-import type { IEvent, INewsItem, ISermon } from '../../src/types';
-import { DEFAULT_EVENTS, DEFAULT_NEWS, DEFAULT_SERMONS } from './defaults';
+import type { IEvent, INewsItem, ISermon } from '../../src/types/index.js';
+import { DEFAULT_EVENTS, DEFAULT_NEWS, DEFAULT_SERMONS } from './defaults.js';
 
 export interface AuthRecord {
   salt: string;
@@ -61,6 +61,7 @@ function seedStore(): AppStore {
     sermons: DEFAULT_SERMONS,
     contacts: [],
     auth: { ...EMPTY_AUTH },
+    authAuditLogs: [],
   };
 }
 
@@ -103,6 +104,7 @@ function hasBlobToken(): boolean {
 
 function normalize(raw: Partial<AppStore> | null | undefined): AppStore {
   const seed = seedStore();
+  const rawLogs = raw?.authAuditLogs;
   return {
     events: Array.isArray(raw?.events) ? raw!.events : seed.events,
     announcements: Array.isArray(raw?.announcements) ? raw!.announcements : seed.announcements,
@@ -113,6 +115,7 @@ function normalize(raw: Partial<AppStore> | null | undefined): AppStore {
       hash: raw?.auth?.hash || '',
       tokenVersion: typeof raw?.auth?.tokenVersion === 'number' ? raw.auth.tokenVersion : 1,
     },
+    authAuditLogs: Array.isArray(rawLogs) ? rawLogs : [],
   };
 }
 

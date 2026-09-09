@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAdmin } from './_lib/auth';
-import { readBody, sendError, sendJson, queryString } from './_lib/http';
-import { readStore, updateStore } from './_lib/store';
-import { asContentItem, isManagedCategory, validateItem } from './_lib/validate';
-import type { ContentItem, IEvent, INewsItem } from '../src/types';
+import { requireAdmin } from './_lib/auth.js';
+import { readBody, sendError, sendJson, queryString } from './_lib/http.js';
+import { readStore, updateStore } from './_lib/store.js';
+import { asContentItem, isManagedCategory, validateItem } from './_lib/validate.js';
+import type { ContentItem, IEvent, INewsItem } from '../src/types/index.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = req.method || 'GET';

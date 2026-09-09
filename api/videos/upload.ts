@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { put } from '@vercel/blob';
-import { parseBearer, verifyAdminJwt } from '../_lib/auth';
-import { readBody, sendError, sendJson } from '../_lib/http';
+import { parseBearer, verifyAdminJwt } from '../_lib/auth.js';
+import { readBody, sendError, sendJson } from '../_lib/http.js';
 
 const MAX_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];

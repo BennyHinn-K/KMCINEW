@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import type { VercelRequest } from '@vercel/node';
-import { readStore, updateStore, type AuthRecord, type AuthAuditEntry } from './store';
+import { readStore, updateStore, type AuthRecord, type AuthAuditEntry } from './store.js';
 
 const scrypt = promisify(scryptCb);
 

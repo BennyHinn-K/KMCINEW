@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAdmin } from './_lib/auth';
-import { readBody, sendError, sendJson } from './_lib/http';
-import { readStore, updateStore } from './_lib/store';
-import type { IEvent, INewsItem } from '../src/types';
+import { requireAdmin } from './_lib/auth.js';
+import { readBody, sendError, sendJson } from './_lib/http.js';
+import { readStore, updateStore } from './_lib/store.js';
+import type { IEvent, INewsItem } from '../src/types/index.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
