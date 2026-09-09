@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { readBody, sendError, sendJson } from './_lib/http.js';
-import { updateStore, type ContactMessage } from './_lib/store.js';
+import { readBody, sendError, sendJson } from './_lib/http';
+import { updateStore, type ContactMessage } from './_lib/store';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

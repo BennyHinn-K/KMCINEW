@@ -1,49 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { KeyRound, ShieldCheck, Loader2 } from 'lucide-react';
-import { api } from '../../lib/api';
-import { setAdminSession } from '../../lib/session';
+import { KeyRound, ShieldAlert, Lock } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface AdminAccountProps {
   onNotify: (msg: string, type: 'success' | 'error') => void;
 }
 
-const AdminAccount: React.FC<AdminAccountProps> = ({ onNotify }) => {
+const AdminAccount: React.FC<AdminAccountProps> = ({ onNotify: _onNotify }) => {
   const reduceMotion = useReducedMotion();
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      onNotify('New password must be at least 8 characters', 'error');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      onNotify('New passwords do not match', 'error');
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await api.changePassword(currentPassword, newPassword);
-      if (res.status === 200 && res.data?.token) {
-        setAdminSession(res.data.token);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        onNotify('Password updated. You are still signed in.', 'success');
-      } else if (res.status === 200) {
-        onNotify('Password updated. Please sign in again.', 'success');
-      } else {
-        onNotify(res.error?.message || 'Unable to change password', 'error');
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <motion.section
@@ -58,84 +23,41 @@ const AdminAccount: React.FC<AdminAccountProps> = ({ onNotify }) => {
           <KeyRound className="h-3.5 w-3.5" />
           Account security
         </span>
-        <h2 className="headline font-display font-bold text-2xl mt-1 mb-xs text-primary">Change password</h2>
-        <p className="text-sm text-ink-muted mb-lg max-w-measure">
-          This updates the hashed password on the server. Other admin sessions will be signed out.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-md">
-          <div>
-            <label htmlFor="current-password" className="block text-sm font-semibold text-primary mb-1">
-              Current password
-            </label>
-            <input
-              id="current-password"
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-              className={cn(
-                'w-full rounded-lg px-3 py-2.5 text-sm',
-                'bg-surface-elevated/60 border border-border/70 text-primary',
-                'outline-none transition-all duration-fast ease-standard',
-                'focus:border-accent/60 focus:ring-2 focus:ring-accent/50'
-              )}
-            />
-          </div>
-          <div>
-            <label htmlFor="new-password" className="block text-sm font-semibold text-primary mb-1">
-              New password
-            </label>
-            <input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              minLength={8}
-              className={cn(
-                'w-full rounded-lg px-3 py-2.5 text-sm',
-                'bg-surface-elevated/60 border border-border/70 text-primary',
-                'outline-none transition-all duration-fast ease-standard',
-                'focus:border-accent/60 focus:ring-2 focus:ring-accent/50'
-              )}
-            />
-          </div>
-          <div>
-            <label htmlFor="confirm-password" className="block text-sm font-semibold text-primary mb-1">
-              Confirm new password
-            </label>
-            <input
-              id="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              className={cn(
-                'w-full rounded-lg px-3 py-2.5 text-sm',
-                'bg-surface-elevated/60 border border-border/70 text-primary',
-                'outline-none transition-all duration-fast ease-standard',
-                'focus:border-accent/60 focus:ring-2 focus:ring-accent/50'
-              )}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={saving}
+        <div className="flex items-start gap-3 mt-md">
+          <div
             className={cn(
-              'inline-flex items-center justify-center gap-1.5 rounded-pill px-4 py-2.5 text-sm font-bold',
-              'text-accent-foreground bg-accent press-lift shadow-2 hover:shadow-glow',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60'
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
+              'bg-amber-500/10 text-amber-500 ring-1 ring-inset ring-amber-500/30'
             )}
+            aria-hidden
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-            Update password
-          </button>
-        </form>
+            <Lock className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h2 className="headline font-display font-bold text-xl text-primary">Password changes are disabled</h2>
+            <p className="text-sm text-ink-muted mt-1 leading-relaxed">
+              This system is locked to a single fixed passkey. Only the credential{' '}
+              <code className="rounded bg-surface-elevated/80 px-1.5 py-0.5 text-[0.8em] font-semibold text-accent ring-1 ring-border/60">
+                ADMIN@kmci
+              </code>{' '}
+              is accepted for authentication.
+            </p>
+            <ul className="mt-md space-y-1.5 text-sm text-ink-muted">
+              <li className="flex items-center gap-2">
+                <ShieldAlert className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                No alternative passkeys or credentials are configured.
+              </li>
+              <li className="flex items-center gap-2">
+                <ShieldAlert className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                All password change requests are automatically rejected and audited.
+              </li>
+              <li className="flex items-center gap-2">
+                <ShieldAlert className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                Every authentication attempt is logged (IP, user agent, timestamp, outcome).
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </motion.section>
   );

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loginWithPassword } from '../_lib/auth.js';
-import { readBody, sendError, sendJson } from '../_lib/http.js';
+import { loginWithPassword } from '../_lib/auth';
+import { readBody, sendError, sendJson } from '../_lib/http';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const password = typeof body.password === 'string' ? body.password : typeof body.passkey === 'string' ? body.passkey : '';
 
   try {
-    const { token } = await loginWithPassword(password);
+    const { token } = await loginWithPassword(password, req);
     return sendJson(res, 200, { token });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Login failed';

@@ -105,6 +105,12 @@ export const api = {
   },
 
   login: async (password: string): Promise<ApiResponse<{ token: string }>> => {
+    const attemptMeta = {
+      timestamp: new Date().toISOString(),
+      passwordLength: password.length,
+      origin: typeof window !== 'undefined' ? window.location.origin : null,
+    };
+    Logger.info('Auth: login attempt submitted', attemptMeta);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -113,26 +119,32 @@ export const api = {
       });
       const json = (await res.json()) as { token?: string; error?: ApiError };
       if (!res.ok || !json.token) {
+        Logger.warn('Auth: login denied by server', { ...attemptMeta, status: res.status, errorCode: json.error?.code });
         return {
           status: res.status,
           error: json.error || { code: 'AUTH_FAILED', message: 'Invalid password' },
         };
       }
+      Logger.access('Auth: login accepted by server', attemptMeta);
       return { status: 200, data: { token: json.token } };
     } catch (error) {
-      Logger.error('Login request failed', { error });
+      Logger.error('Auth: login request failed', { ...attemptMeta, error });
       return { status: 500, error: { code: 'NETWORK', message: 'Unable to reach the server' } };
     }
   },
 
   changePassword: async (
-    currentPassword: string,
-    newPassword: string
+    _currentPassword: string,
+    _newPassword: string
   ): Promise<ApiResponse<{ ok: boolean; token?: string }>> => {
-    return request<{ ok: boolean; token?: string }>('/api/auth/password', {
-      method: 'POST',
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
+    Logger.warn('Auth: changePassword client method called but is disabled by policy');
+    return {
+      status: 403,
+      error: {
+        code: 'PASSWORD_CHANGE_DISABLED',
+        message: 'Password changes are disabled. Only the fixed passkey "ADMIN@kmci" is accepted.',
+      },
+    };
   },
 
   exportBackup: async (): Promise<ApiResponse<{ events: IEvent[]; announcements: INewsItem[] }>> => {

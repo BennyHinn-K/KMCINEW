@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { del, list, put } from '@vercel/blob';
 import type { IEvent, INewsItem, ISermon } from '../../src/types';
-import { DEFAULT_EVENTS, DEFAULT_NEWS, DEFAULT_SERMONS } from './defaults.js';
+import { DEFAULT_EVENTS, DEFAULT_NEWS, DEFAULT_SERMONS } from './defaults';
 
 export interface AuthRecord {
   salt: string;
@@ -21,12 +21,33 @@ export interface ContactMessage {
   delivered: boolean;
 }
 
+export interface AuthAuditEntry {
+  id: string;
+  timestamp: string;
+  event:
+    | 'LOGIN_ATTEMPT'
+    | 'LOGIN_SUCCESS'
+    | 'LOGIN_FAILURE'
+    | 'PASSWORD_CHANGE_ATTEMPT'
+    | 'PASSWORD_CHANGE_BLOCKED'
+    | 'JWT_VERIFY_FAILURE'
+    | 'JWT_VERIFY_SUCCESS'
+    | 'ADMIN_ROUTE_ACCESS'
+    | 'UNAUTHORIZED_ROUTE_ATTEMPT';
+  ip: string | null;
+  userAgent: string | null;
+  path: string | null;
+  status: 'ALLOWED' | 'DENIED';
+  details?: Record<string, unknown>;
+}
+
 export interface AppStore {
   events: IEvent[];
   announcements: INewsItem[];
   sermons: ISermon[];
   contacts: ContactMessage[];
   auth: AuthRecord;
+  authAuditLogs?: AuthAuditEntry[];
 }
 
 const BLOB_PATH = 'kmci/store.json';
